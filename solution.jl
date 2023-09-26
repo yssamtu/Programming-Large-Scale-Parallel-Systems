@@ -79,19 +79,20 @@ function floyd_worker_barrier!(Cw,comm)
         if k in rows
             k_index = k - first(rows) + 1
             Ck .= view(Cw, k_index, :)
-            for process in 0:max_rank
-                if rank == process
-                    continue
-                end
+            for process in 0:(rank - 1)
+                MPI.Send(Ck, comm; dest=process)
+            end
+            for process in (rank + 1):max_rank
                 MPI.Send(Ck, comm; dest=process)
             end
         else
             MPI.Recv!(Ck, comm; source=MPI.ANY_SOURCE)
         end
-        for j in 1:num_column
-            for i in 1:num_row
-                @inbounds Cw[i, j] = min(Cw[i, j], Cw[i, k] + Ck[j])
+        @inbounds @views for j in 1:num_column
+            if Ck[j] == 100000
+                continue
             end
+            Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ck[j])
         end
         MPI.Barrier(comm)
     end
@@ -174,4 +175,3 @@ function main_run(;N,method,R)
         end
     end
 end
-
