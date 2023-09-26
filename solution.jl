@@ -94,7 +94,9 @@ function floyd_worker_barrier!(Cw,comm)
             end
             Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ck[j])
         end
-        MPI.Barrier(comm)
+        if div(k, num_row) == 0
+            MPI.Barrier(comm)
+        end
     end
 end
 
