@@ -100,11 +100,28 @@ function floyd_worker_barrier!(Cw,comm)
     end
 end
 
-function floyd_worker_bcast!(Cw,comm)
+function floyd_worker_bcast!(Cw, comm)
     # Implement here your solution for method 2 of Floyd's parallel algotrithm #
     # Attetion: the worker who is sending needs be the root of the Broadcast #
     # You are only allowed to use the MPI.Bcast! collective for this part #
-    
+    rank = MPI.Comm_rank(comm)
+    max_rank = MPI.Comm_size(comm) - 1
+    num_row, num_column = size(Cw)
+    rows = (1:num_row) .+ rank * num_row
+    Ck = similar(Cw, num_column)
+    for k in 1:num_column
+        if k in rows
+            k_index = k - first(rows) + 1
+            Ck .= view(Cw, k_index, :)
+        end
+        MPI.Bcast!(Ck, div(k - 1, num_row), comm)
+        @inbounds @views for j in 1:num_column
+            if Ck[j] == 100000
+                continue
+            end
+            Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ck[j])
+        end
+    end
 end
 
 function floyd_worker_status!(Cw,comm)
