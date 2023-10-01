@@ -124,7 +124,7 @@ function floyd_worker_bcast!(Cw, comm)
     end
 end
 
-function floyd_worker_status!(Cw,comm)
+function floyd_worker_status!(Cw, comm)
     # Implement here your solution for method 3 of Floyd's parallel algotrithm #
     # Your MPI.Send can use any tag that you wish #
     # Your MPI.Recv! can only use  MPI.ANY_SOURCE as source, and MPI.ANY_TAG as tag values #

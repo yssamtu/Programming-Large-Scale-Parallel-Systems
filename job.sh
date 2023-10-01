@@ -10,7 +10,7 @@ pwd
 
 # Parallel
 
-mpiexec -np 16 julia --project=. -e '
+mpiexec -np 4 julia --project=. -e '
     include("solution.jl")
     for m in 1:3
        main_run(R=5,N=3200,method=m)
