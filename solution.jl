@@ -130,7 +130,38 @@ function floyd_worker_status!(Cw,comm)
     # Your MPI.Recv! can only use  MPI.ANY_SOURCE as source, and MPI.ANY_TAG as tag values #
     # You can use MPI.STATUS in your MPI.RECV! #
     # You are only allowed to use MPI.Send and MPI.Recv! and MPI.Status #
-    
+    rank = MPI.Comm_rank(comm)
+    max_rank = MPI.Comm_size(comm) - 1
+    num_row, num_column = size(Cw)
+    rows = (1:num_row) .+ rank * num_row
+    Ck = similar(Cw, num_column)
+    for k in 1:num_column
+        if k in rows
+            k_index = k - first(rows) + 1
+            Ck .= view(Cw, k_index, :)
+            for process in 0:(rank - 1)
+                MPI.Send(Ck, comm; dest=process, tag=k)
+            end
+            for process in (rank + 1):max_rank
+                MPI.Send(Ck, comm; dest=process, tag=k)
+            end
+            @inbounds @views for j in 1:num_column
+                if Ck[j] == 100000
+                    continue
+                end
+                Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ck[j])
+            end
+        else
+            _, status = MPI.Recv!(Ck, comm, MPI.Status; source=MPI.ANY_SOURCE)
+            recv_k = status.tag
+            @inbounds @views for j in 1:num_column
+                if Ck[j] == 100000
+                    continue
+                end
+                Cw[:, j] .= min.(Cw[:, j], Cw[:, recv_k] .+ Ck[j])
+            end
+        end
+    end
 end
 
 const methods = (
