@@ -86,7 +86,7 @@ function floyd_worker_barrier!(Cw,comm)
                 MPI.Send(Ck, comm; dest=process)
             end
         else
-            MPI.Recv!(Ck, comm; source=MPI.ANY_SOURCE)
+            MPI.Recv!(Ck, comm; source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG)
         end
         @inbounds @views for j in 1:num_column
             if Ck[j] == 100000
@@ -152,7 +152,7 @@ function floyd_worker_status!(Cw,comm)
                 Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ck[j])
             end
         else
-            _, status = MPI.Recv!(Ck, comm, MPI.Status; source=MPI.ANY_SOURCE)
+            _, status = MPI.Recv!(Ck, comm, MPI.Status; source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG)
             recv_k = status.tag
             @inbounds @views for j in 1:num_column
                 if Ck[j] == 100000
