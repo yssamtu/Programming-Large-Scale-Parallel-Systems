@@ -114,7 +114,7 @@ function floyd_worker_bcast!(Cw, comm)
             k_index = k - first(rows) + 1
             Ck .= view(Cw, k_index, :)
         end
-        MPI.Bcast!(Ck, div(k - 1, num_row), comm)
+        MPI.Bcast!(Ck, comm; root=div(k - 1, num_row))
         @inbounds @views for j in 1:num_column
             if Ck[j] == 100000
                 continue
