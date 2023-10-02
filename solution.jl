@@ -89,10 +89,11 @@ function floyd_worker_barrier!(Cw,comm)
             MPI.Recv!(Ck, comm; source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG)
         end
         @inbounds @views for j in 1:num_column
-            if Ck[j] == 100000
+            Ckj = Ck[j]
+            if Ckj == 100000
                 continue
             end
-            Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ck[j])
+            Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ckj)
         end
         if div(k, num_row) == 0
             MPI.Barrier(comm)
@@ -116,10 +117,11 @@ function floyd_worker_bcast!(Cw, comm)
         end
         MPI.Bcast!(Ck, comm; root=div(k - 1, num_row))
         @inbounds @views for j in 1:num_column
-            if Ck[j] == 100000
+            Ckj = Ck[j]
+            if Ckj == 100000
                 continue
             end
-            Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ck[j])
+            Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ckj)
         end
     end
 end
@@ -146,19 +148,21 @@ function floyd_worker_status!(Cw, comm)
                 MPI.Send(Ck, comm; dest=process, tag=k)
             end
             @inbounds @views for j in 1:num_column
-                if Ck[j] == 100000
+                Ckj = Ck[j]
+                if Ckj == 100000
                     continue
                 end
-                Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ck[j])
+                Cw[:, j] .= min.(Cw[:, j], Cw[:, k] .+ Ckj)
             end
         else
             _, status = MPI.Recv!(Ck, comm, MPI.Status; source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG)
             recv_k = status.tag
             @inbounds @views for j in 1:num_column
-                if Ck[j] == 100000
+                Ckj = Ck[j]
+                if Ckj == 100000
                     continue
                 end
-                Cw[:, j] .= min.(Cw[:, j], Cw[:, recv_k] .+ Ck[j])
+                Cw[:, j] .= min.(Cw[:, j], Cw[:, recv_k] .+ Ckj)
             end
         end
     end
